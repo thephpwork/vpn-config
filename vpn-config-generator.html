@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>کانفیگ‌ساز VPN</title>
+<link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:#070b14;--surface:#0d1426;--surface2:#111d36;--surface3:#162240;
+    --border:rgba(56,139,253,0.18);--accent:#3b82f6;--accent2:#6ee7b7;
+    --text:#e2eaf8;--muted:#7b8fb5;--danger:#ef4444;--success:#10b981;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{background:var(--bg);font-family:'Vazirmatn',sans-serif;color:var(--text);min-height:100vh;overflow-x:hidden;}
+  body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse 80% 50% at 20% 10%,rgba(59,130,246,0.08) 0%,transparent 60%),radial-gradient(ellipse 60% 40% at 80% 80%,rgba(110,231,183,0.06) 0%,transparent 60%);pointer-events:none;z-index:0;}
+  body::after{content:'';position:fixed;inset:0;background-image:radial-gradient(rgba(59,130,246,0.1) 1px,transparent 1px);background-size:32px 32px;pointer-events:none;z-index:0;opacity:0.35;}
+  .wrap{max-width:800px;margin:0 auto;padding:24px 18px 80px;position:relative;z-index:1;}
+
+  header{text-align:center;padding:36px 0 28px;}
+  .logo-ring{width:68px;height:68px;border-radius:50%;border:2px solid var(--accent);display:flex;align-items:center;justify-content:center;margin:0 auto 14px;box-shadow:0 0 30px rgba(59,130,246,0.3),inset 0 0 20px rgba(59,130,246,0.08);animation:pulse 3s ease-in-out infinite;position:relative;}
+  .logo-ring::before{content:'';position:absolute;inset:7px;border-radius:50%;border:1px solid rgba(110,231,183,0.35);animation:spin 8s linear infinite;}
+  @keyframes pulse{0%,100%{box-shadow:0 0 30px rgba(59,130,246,0.25)}50%{box-shadow:0 0 55px rgba(59,130,246,0.5)}}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .logo-ring svg{width:30px;height:30px;fill:var(--accent);}
+  header h1{font-size:1.85rem;font-weight:800;background:linear-gradient(135deg,#fff 20%,var(--accent) 60%,var(--accent2) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:6px;}
+  header p{color:var(--muted);font-size:0.88rem;}
+
+  .tabs{display:flex;gap:10px;margin-bottom:24px;background:var(--surface);padding:5px;border-radius:16px;border:1px solid var(--border);}
+  .tab-btn{flex:1;padding:13px;border-radius:12px;border:none;cursor:pointer;font-family:'Vazirmatn',sans-serif;font-size:0.93rem;font-weight:700;color:var(--muted);background:transparent;transition:all 0.3s;display:flex;align-items:center;justify-content:center;gap:8px;}
+  .tab-btn.active{background:linear-gradient(135deg,var(--accent),#1d4ed8);color:#fff;box-shadow:0 4px 20px rgba(59,130,246,0.4);}
+  .tab-btn:not(.active):hover{background:var(--surface3);color:var(--text);}
+  .tab-btn svg{width:17px;height:17px;}
+
+  .panel{display:none;animation:fadeUp 0.3s ease;}
+  .panel.active{display:block;}
+  @keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:22px;margin-bottom:14px;position:relative;overflow:hidden;}
+  .card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--accent),transparent);opacity:0.5;}
+  .sec-title{font-size:0.75rem;font-weight:700;color:var(--accent);letter-spacing:1px;text-transform:uppercase;margin-bottom:14px;display:flex;align-items:center;gap:7px;}
+  .sec-title svg{width:13px;height:13px;}
+
+  .field-label{font-size:0.78rem;color:var(--muted);font-weight:600;margin-bottom:7px;display:flex;align-items:center;gap:5px;}
+  .field-label .req{color:var(--danger);}
+  textarea,input[type=text]{width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:12px;color:var(--text);font-family:monospace;font-size:0.78rem;padding:12px 14px;resize:none;transition:border-color 0.2s;direction:ltr;line-height:1.6;}
+  textarea:focus,input[type=text]:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(59,130,246,0.12);}
+  textarea::placeholder,input[type=text]::placeholder{color:var(--muted);opacity:0.7;}
+  .input-group{margin-bottom:14px;}
+  .input-group:last-child{margin-bottom:0;}
+
+  .parsed-preview{display:none;margin-top:10px;background:rgba(110,231,183,0.06);border:1px solid rgba(110,231,183,0.2);border-radius:10px;padding:12px 14px;}
+  .parsed-preview.show{display:block;}
+  .parsed-row{display:flex;justify-content:space-between;align-items:center;padding:4px 0;}
+  .parsed-key{font-size:0.72rem;color:var(--muted);font-weight:600;}
+  .parsed-val{font-size:0.72rem;color:var(--accent2);font-family:monospace;direction:ltr;}
+
+  .ip-grid{display:flex;flex-direction:column;gap:9px;}
+  .ip-card{display:flex;align-items:center;gap:12px;padding:13px 15px;border-radius:12px;border:1px solid var(--border);cursor:pointer;transition:all 0.22s;background:var(--surface2);user-select:none;}
+  .ip-card:hover{border-color:var(--accent);background:var(--surface3);transform:translateX(-2px);}
+  .ip-card.sel{border-color:var(--accent);background:rgba(59,130,246,0.1);box-shadow:0 0 0 1px rgba(59,130,246,0.2);}
+  .chk{width:20px;height:20px;border-radius:6px;border:2px solid var(--border);display:flex;align-items:center;justify-content:center;transition:all 0.2s;flex-shrink:0;}
+  .ip-card.sel .chk{background:var(--accent);border-color:var(--accent);}
+  .chk svg{width:11px;height:11px;fill:none;stroke:#fff;stroke-width:2.5;}
+  .ip-info{flex:1;}
+  .ip-addr{font-weight:700;font-size:0.97rem;font-family:monospace;direction:ltr;text-align:right;}
+  .ip-sub{font-size:0.73rem;color:var(--muted);margin-top:2px;}
+  .ip-tag{font-size:0.68rem;padding:3px 8px;border-radius:20px;background:rgba(110,231,183,0.1);color:var(--accent2);border:1px solid rgba(110,231,183,0.2);font-weight:700;}
+
+  .hint-box{margin-top:10px;padding:11px 13px;background:rgba(245,158,11,0.07);border:1px solid rgba(245,158,11,0.2);border-radius:10px;font-size:0.78rem;color:#fbbf24;display:flex;gap:8px;align-items:flex-start;}
+  .hint-box svg{width:15px;height:15px;fill:#fbbf24;flex-shrink:0;margin-top:1px;}
+
+  .two-col{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+  @media(max-width:500px){.two-col{grid-template-columns:1fr;}}
+
+  .build-btn{width:100%;padding:17px;border-radius:14px;border:none;cursor:pointer;font-family:'Vazirmatn',sans-serif;font-size:1rem;font-weight:700;background:linear-gradient(135deg,var(--accent),#1d4ed8);color:#fff;transition:all 0.3s;box-shadow:0 6px 28px rgba(59,130,246,0.35);display:flex;align-items:center;justify-content:center;gap:9px;margin-top:6px;position:relative;overflow:hidden;}
+  .build-btn:hover{transform:translateY(-2px);box-shadow:0 10px 38px rgba(59,130,246,0.5);}
+  .build-btn::before{content:'';position:absolute;top:0;left:-100%;width:100%;height:100%;background:linear-gradient(90deg,transparent,rgba(255,255,255,0.1),transparent);transition:left 0.5s;}
+  .build-btn:hover::before{left:100%;}
+  .build-btn svg{width:19px;height:19px;}
+
+  .err{display:none;margin-top:10px;padding:11px 13px;background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);border-radius:10px;font-size:0.8rem;color:#f87171;align-items:center;gap:7px;}
+  .err.show{display:flex;}
+  .err svg{width:15px;height:15px;fill:#f87171;flex-shrink:0;}
+
+  .results{margin-top:6px;display:none;}
+  .res-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;}
+  .res-hdr h3{font-size:0.82rem;font-weight:700;color:var(--accent2);display:flex;align-items:center;gap:6px;}
+  .res-hdr h3 svg{width:13px;height:13px;}
+  .copy-all{font-size:0.73rem;padding:5px 11px;border-radius:8px;border:1px solid rgba(110,231,183,0.3);background:rgba(110,231,183,0.06);color:var(--accent2);cursor:pointer;font-family:'Vazirmatn',sans-serif;font-weight:700;transition:all 0.2s;}
+  .copy-all:hover{background:rgba(110,231,183,0.12);}
+
+  .cfg-item{background:var(--surface2);border:1px solid var(--border);border-radius:14px;padding:15px;margin-bottom:11px;transition:border-color 0.2s;}
+  .cfg-item:hover{border-color:rgba(59,130,246,0.3);}
+  .cfg-item-hdr{display:flex;justify-content:space-between;align-items:center;margin-bottom:9px;}
+  .cfg-name{font-size:0.78rem;font-weight:700;color:var(--accent);display:flex;align-items:center;gap:6px;}
+  .cfg-name .dot{width:6px;height:6px;border-radius:50%;background:var(--accent2);box-shadow:0 0 6px var(--accent2);animation:blink 2s infinite;}
+  @keyframes blink{0%,100%{opacity:1}50%{opacity:0.3}}
+  .copy-btn{font-size:0.72rem;padding:5px 10px;border-radius:7px;border:1px solid var(--border);background:var(--surface3);color:var(--muted);cursor:pointer;font-family:'Vazirmatn',sans-serif;font-weight:700;transition:all 0.2s;display:flex;align-items:center;gap:5px;}
+  .copy-btn:hover{border-color:var(--accent);color:var(--accent);}
+  .copy-btn.ok{border-color:var(--success);color:var(--success);}
+  .copy-btn svg{width:12px;height:12px;}
+  .cfg-text{font-family:monospace;font-size:0.7rem;color:var(--muted);word-break:break-all;line-height:1.65;direction:ltr;text-align:left;background:rgba(0,0,0,0.3);padding:10px 12px;border-radius:8px;border:1px solid rgba(255,255,255,0.04);}
+
+  .sub-info{background:rgba(110,231,183,0.05);border:1px solid rgba(110,231,183,0.14);border-radius:12px;padding:13px;margin-bottom:14px;font-size:0.8rem;color:var(--muted);line-height:1.7;}
+  .sub-info strong{color:var(--accent2);}
+  .sub-display{background:var(--surface2);border:1px solid var(--border);border-radius:14px;padding:15px;}
+  .sub-url{font-family:monospace;font-size:0.78rem;color:var(--accent2);word-break:break-all;direction:ltr;margin-bottom:12px;min-height:22px;}
+  .sub-url.empty{color:var(--muted);font-size:0.75rem;font-style:italic;}
+  .sub-acts{display:flex;gap:8px;flex-wrap:wrap;}
+  .sub-act{flex:1;min-width:90px;padding:10px 13px;border-radius:10px;border:none;cursor:pointer;font-family:'Vazirmatn',sans-serif;font-size:0.8rem;font-weight:700;transition:all 0.25s;display:flex;align-items:center;justify-content:center;gap:6px;}
+  .sa-copy{background:linear-gradient(135deg,var(--accent),#1d4ed8);color:#fff;box-shadow:0 4px 15px rgba(59,130,246,0.3);}
+  .sa-copy:hover{transform:translateY(-1px);box-shadow:0 6px 22px rgba(59,130,246,0.45);}
+  .sa-open{background:var(--surface3);color:var(--text);border:1px solid var(--border);}
+  .sa-open:hover{border-color:var(--accent);color:var(--accent);}
+  .sub-act svg{width:14px;height:14px;}
+  .guide-row{display:flex;align-items:center;gap:11px;padding:11px 13px;border-radius:11px;border:1px solid var(--border);background:var(--surface2);margin-bottom:8px;}
+  .guide-icon{font-size:1.3rem;}
+  .guide-name{font-weight:700;font-size:0.85rem;margin-bottom:2px;}
+  .guide-desc{font-size:0.72rem;color:var(--muted);}
+  .divider{height:1px;background:var(--border);margin:18px 0;}
+
+  .social{display:flex;gap:9px;margin-top:30px;justify-content:center;flex-wrap:wrap;}
+  .soc-a{display:flex;align-items:center;gap:7px;padding:9px 18px;border-radius:30px;text-decoration:none;font-size:0.8rem;font-weight:700;transition:all 0.25s;border:1px solid var(--border);background:var(--surface);}
+  .soc-a:hover{transform:translateY(-2px);}
+  .soc-ch{border-color:rgba(59,130,246,0.3);color:var(--accent);background:rgba(59,130,246,0.06);}
+  .soc-sp{border-color:rgba(110,231,183,0.3);color:var(--accent2);background:rgba(110,231,183,0.06);}
+  .soc-a svg{width:15px;height:15px;}
+
+  .toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%) translateY(80px);background:var(--success);color:#fff;padding:11px 22px;border-radius:30px;font-size:0.83rem;font-weight:700;transition:transform 0.32s ease;z-index:100;box-shadow:0 6px 28px rgba(16,185,129,0.4);display:flex;align-items:center;gap:7px;white-space:nowrap;}
+  .toast.show{transform:translateX(-50%) translateY(0);}
+  .toast svg{width:15px;height:15px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="logo-ring">
+      <svg viewBox="0 0 24 24"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 4.9l5 2.22V11c0 3.55-2.39 6.86-5 7.93-2.61-1.07-5-4.38-5-7.93V8.12L12 5.9z"/></svg>
+    </div>
+    <h1>کانفیگ‌ساز VPN</h1>
+    <p>ساخت کانفیگ شخصی‌سازی‌شده یا مدیریت لینک ساب</p>
+  </header>
+
+  <div class="tabs">
+    <button class="tab-btn active" onclick="setTab('cfg')" id="t-cfg">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 15.5A3.5 3.5 0 018.5 12 3.5 3.5 0 0112 8.5a3.5 3.5 0 013.5 3.5 3.5 3.5 0 01-3.5 3.5m7.43-2.92c.04-.36.07-.73.07-1.08s-.03-.73-.07-1.08l2.33-1.82c.21-.17.27-.46.14-.7l-2.2-3.82a.55.55 0 00-.68-.24l-2.75 1.11c-.57-.44-1.19-.8-1.86-1.08L14.21 2.5c-.07-.28-.32-.5-.61-.5h-4.4c-.29 0-.54.22-.61.5l-.42 2.92c-.67.28-1.3.64-1.86 1.08L4.06 5.39a.55.55 0 00-.68.24L1.18 9.45c-.13.24-.07.53.14.7l2.33 1.82c-.04.35-.07.72-.07 1.08s.03.73.07 1.08L1.32 15.95c-.21.17-.27.46-.14.7l2.2 3.82c.13.24.44.33.68.24l2.75-1.11c.57.44 1.19.8 1.86 1.08l.42 2.92c.07.28.32.5.61.5h4.4c.29 0 .54-.22.61-.5l.42-2.92c.67-.28 1.3-.64 1.86-1.08l2.75 1.11c.24.09.55 0 .68-.24l2.2-3.82c.13-.24.07-.53-.14-.7l-2.33-1.82z"/></svg>
+      ساخت کانفیگ
+    </button>
+    <button class="tab-btn" onclick="setTab('sub')" id="t-sub">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M18 4H6C4.9 4 4 4.9 4 6v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm-5 10H7v-2h6v2zm3-4H7V8h9v2z"/></svg>
+      ساب‌اسکریپشن
+    </button>
+  </div>
+
+  <!-- CONFIG PANEL -->
+  <div class="panel active" id="p-cfg">
+
+    <div class="card">
+      <div class="sec-title">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zm-1 7V3.5L18.5 9H13zm-2 9H7v-2h4v2zm6-4H7v-2h10v2z"/></svg>
+        مرحله ۱ — کانفیگ خام رو بزار
+      </div>
+      <div class="input-group">
+        <div class="field-label">کانفیگ vless اصلی <span class="req">*</span></div>
+        <textarea id="raw-cfg" rows="4" placeholder="vless://uuid@host:port?params#name" oninput="parseConfig(this.value)"></textarea>
+      </div>
+      <div class="parsed-preview" id="preview">
+        <div class="parsed-row"><span class="parsed-key">🔑 UUID</span><span class="parsed-val" id="pv-uuid">—</span></div>
+        <div class="parsed-row"><span class="parsed-key">🌐 هاست اصلی</span><span class="parsed-val" id="pv-host">—</span></div>
+        <div class="parsed-row"><span class="parsed-key">🔌 پورت</span><span class="parsed-val" id="pv-port">—</span></div>
+        <div class="parsed-row"><span class="parsed-key">🏷️ نام</span><span class="parsed-val" id="pv-name">—</span></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="sec-title">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M1 9l2 2c4.97-4.97 13.03-4.97 18 0l2-2C16.93 2.93 7.08 2.93 1 9zm8 8l3 3 3-3a4.237 4.237 0 00-6 0zm-4-4l2 2a7.074 7.074 0 0110 0l2-2C15.14 9.14 8.87 9.14 5 13z"/></svg>
+        مرحله ۲ — آدرس سرور
+      </div>
+      <div class="hint-box">
+        <svg viewBox="0 0 24 24"><path d="M11 17h2v-6h-2v6zm1-15C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zM11 9h2V7h-2v2z"/></svg>
+        هر دو آدرس به یه سرور وصل میشن. اگه یکی کند بود اون دیگری رو بزن — یا هر دو رو انتخاب کن!
+      </div>
+      <div style="height:11px"></div>
+      <div class="ip-grid">
+        <label class="ip-card" onclick="toggleIP(this,'198.169.2.65')">
+          <div class="chk"><svg viewBox="0 0 12 12"><polyline points="2,6 5,9 10,3"/></svg></div>
+          <div class="ip-info"><div class="ip-addr">198.169.2.65</div><div class="ip-sub">آدرس اول — پیش‌فرض</div></div>
+          <div class="ip-tag">IP 1</div>
+        </label>
+        <label class="ip-card" onclick="toggleIP(this,'198.169.2.1')">
+          <div class="chk"><svg viewBox="0 0 12 12"><polyline points="2,6 5,9 10,3"/></svg></div>
+          <div class="ip-info"><div class="ip-addr">198.169.2.1</div><div class="ip-sub">آدرس دوم — جایگزین</div></div>
+          <div class="ip-tag">IP 2</div>
+        </label>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="sec-title">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 4.9l5 2.22V11c0 3.55-2.39 6.86-5 7.93-2.61-1.07-5-4.38-5-7.93V8.12L12 5.9z"/></svg>
+        مرحله ۳ — دامنه پوشش
+      </div>
+      <div class="two-col">
+        <div class="input-group">
+          <div class="field-label">Host (Camouflage Domain)</div>
+          <input type="text" id="host-input" placeholder="example.vercel.app" value="relay-0t24kfd9.vercel.app">
+        </div>
+        <div class="input-group">
+          <div class="field-label">SNI</div>
+          <input type="text" id="sni-input" placeholder="example.vercel.app" value="relay-0t24kfd9.vercel.app">
+        </div>
+      </div>
+      <div style="font-size:0.72rem;color:var(--muted);margin-top:2px;direction:rtl;">
+        💡 معمولاً Host و SNI یکی هستن — مقدار پیش‌فرض گذاشتیم، هر وقت خواستی عوضشون کن
+      </div>
+    </div>
+
+    <div class="err" id="err-msg">
+      <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
+      <span id="err-text">لطفاً کانفیگ خام رو وارد کن و حداقل یک IP انتخاب کن</span>
+    </div>
+
+    <button class="build-btn" onclick="buildConfigs()">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M19 8l-4 4h3c0 3.31-2.69 6-6 6a5.87 5.87 0 01-2.8-.7l-1.46 1.46C8.97 19.54 10.43 20 12 20c4.42 0 8-3.58 8-8h3l-4-4zM6 12c0-3.31 2.69-6 6-6 1.01 0 1.97.25 2.8.7l1.46-1.46A7.93 7.93 0 0012 4c-4.42 0-8 3.58-8 8H1l4 4 4-4H6z"/></svg>
+      ساخت کانفیگ
+    </button>
+
+    <div class="results" id="results">
+      <div class="divider"></div>
+      <div class="res-hdr">
+        <h3>
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/></svg>
+          کانفیگ‌ها آماده‌ست!
+        </h3>
+        <button class="copy-all" onclick="copyAll()">کپی همه</button>
+      </div>
+      <div id="cfg-list"></div>
+    </div>
+  </div>
+
+  <!-- SUB PANEL -->
+  <div class="panel" id="p-sub">
+    <div class="card">
+      <div class="sec-title">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zm-1 7V3.5L18.5 9H13zm-2 9H7v-2h4v2zm6-4H7v-2h10v2z"/></svg>
+        لینک ساب رو وارد کن
+      </div>
+      <div class="input-group">
+        <div class="field-label">آدرس Subscription URL</div>
+        <input type="text" id="sub-input" placeholder="https://panel.example.com/sub/xxxxxxxx" oninput="updateSubDisplay(this.value)">
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="sec-title">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M18 4H6C4.9 4 4 4.9 4 6v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm-5 10H7v-2h6v2zm3-4H7V8h9v2z"/></svg>
+        لینک اشتراک شما
+      </div>
+      <div class="sub-info">لینک ساب رو مستقیم به کلاینتت اضافه کن تا کانفیگ‌ها <strong>خودکار آپدیت</strong> بشن.</div>
+      <div class="sub-display">
+        <div class="sub-url empty" id="sub-url-show">لینک ساب هنوز وارد نشده...</div>
+        <div class="sub-acts">
+          <button class="sub-act sa-copy" onclick="copySubLink()">
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg>
+            کپی لینک
+          </button>
+          <button class="sub-act sa-open" onclick="openSubLink()">
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M19 19H5V5h7V3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2v-7h-2v7zM14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7z"/></svg>
+            باز کردن
+          </button>
+        </div>
+      </div>
+      <div class="divider"></div>
+      <div class="sec-title" style="margin-bottom:10px">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
+        راهنمای اضافه کردن
+      </div>
+      <div class="guide-row"><div class="guide-icon">📱</div><div><div class="guide-name">v2rayNG</div><div class="guide-desc">+ → اضافه کردن از URL اشتراک</div></div></div>
+      <div class="guide-row"><div class="guide-icon">🚀</div><div><div class="guide-name">Hiddify</div><div class="guide-desc">New Profile → از URL وارد کن</div></div></div>
+      <div class="guide-row"><div class="guide-icon">🖥️</div><div><div class="guide-name">Nekoray / Nekobox</div><div class="guide-desc">Program → Add profile from URL</div></div></div>
+    </div>
+  </div>
+
+  <div class="social">
+    <a href="https://t.me/YOUR_CHANNEL" target="_blank" class="soc-a soc-ch">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M11.944 0A12 12 0 000 12a12 12 0 0012 12 12 12 0 0012-12A12 12 0 0012 0a12 12 0 00-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 01.171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/></svg>
+      کانال تلگرام
+    </a>
+    <a href="https://t.me/YOUR_SUPPORT" target="_blank" class="soc-a soc-sp">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M11.944 0A12 12 0 000 12a12 12 0 0012 12 12 12 0 0012-12A12 12 0 0012 0a12 12 0 00-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 01.171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.277-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/></svg>
+      پشتیبانی
+    </a>
+  </div>
+</div>
+
+<div class="toast" id="toast">
+  <svg viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/></svg>
+  <span id="toast-txt">کپی شد!</span>
+</div>
+
+<script>
+let selectedIPs = new Set();
+let parsedCfg = null;
+let currentSubLink = '';
+
+function setTab(t) {
+  ['cfg','sub'].forEach(id => {
+    document.getElementById('t-'+id).classList.toggle('active', id===t);
+    document.getElementById('p-'+id).classList.toggle('active', id===t);
+  });
+}
+
+function toggleIP(el, ip) {
+  if (selectedIPs.has(ip)) { selectedIPs.delete(ip); el.classList.remove('sel'); }
+  else { selectedIPs.add(ip); el.classList.add('sel'); }
+}
+
+function parseConfig(raw) {
+  raw = raw.trim();
+  const preview = document.getElementById('preview');
+  if (!raw || !raw.startsWith('vless://')) { preview.classList.remove('show'); parsedCfg = null; return; }
+  try {
+    const withoutScheme = raw.slice(8);
+    const hashIdx = withoutScheme.indexOf('#');
+    const name = hashIdx >= 0 ? withoutScheme.slice(hashIdx+1) : '';
+    const main = hashIdx >= 0 ? withoutScheme.slice(0, hashIdx) : withoutScheme;
+    const atIdx = main.indexOf('@');
+    if (atIdx < 0) return;
+    const uuid = main.slice(0, atIdx);
+    const rest = main.slice(atIdx+1);
+    const qIdx = rest.indexOf('?');
+    const hostPort = qIdx >= 0 ? rest.slice(0, qIdx) : rest;
+    const queryStr = qIdx >= 0 ? rest.slice(qIdx+1) : '';
+    let host, port;
+    if (hostPort.startsWith('[')) {
+      const bIdx = hostPort.indexOf(']');
+      host = hostPort.slice(1, bIdx);
+      port = hostPort.slice(bIdx+2);
+    } else {
+      const lastColon = hostPort.lastIndexOf(':');
+      host = hostPort.slice(0, lastColon);
+      port = hostPort.slice(lastColon+1);
+    }
+    parsedCfg = { uuid, host, port, queryStr, name, raw };
+    document.getElementById('pv-uuid').textContent = uuid.slice(0,8)+'...';
+    document.getElementById('pv-host').textContent = host;
+    document.getElementById('pv-port').textContent = port;
+    document.getElementById('pv-name').textContent = decodeURIComponent(name).slice(0,45) || '(بدون نام)';
+    preview.classList.add('show');
+  } catch(e) { preview.classList.remove('show'); parsedCfg = null; }
+}
+
+function buildConfigs() {
+  const err = document.getElementById('err-msg');
+  const errTxt = document.getElementById('err-text');
+  if (!parsedCfg) { errTxt.textContent = 'لطفاً اول یه کانفیگ vless معتبر وارد کن'; err.classList.add('show'); return; }
+  if (selectedIPs.size === 0) { errTxt.textContent = 'حداقل یک آدرس IP رو انتخاب کن'; err.classList.add('show'); return; }
+  err.classList.remove('show');
+
+  const newHost = document.getElementById('host-input').value.trim();
+  const newSni  = document.getElementById('sni-input').value.trim();
+
+  const list = document.getElementById('cfg-list');
+  list.innerHTML = '';
+  let idx = 1;
+
+  selectedIPs.forEach(ip => {
+    // ─── فقط IP، host و sni رو جابجا کن، بقیه دست نزن ───
+    let q = parsedCfg.queryStr;
+
+    // host= رو جایگزین کن (با value خالی یا پر)
+    q = replaceParam(q, 'host', newHost);
+    // sni= رو جایگزین کن
+    q = replaceParam(q, 'sni', newSni);
+
+    const config = 'vless://' + parsedCfg.uuid + '@' + ip + ':' + parsedCfg.port
+                 + '?' + q + '#' + parsedCfg.name;
+
+    const card = document.createElement('div');
+    card.className = 'cfg-item';
+    card.innerHTML =
+      '<div class="cfg-item-hdr">' +
+        '<div class="cfg-name"><div class="dot"></div>کانفیگ ' + idx + ' — ' + ip + '</div>' +
+        '<button class="copy-btn" data-cfg="' + esc(config) + '" onclick="copyCfg(this)">' +
+          '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg>' +
+          'کپی</button>' +
+      '</div>' +
+      '<div class="cfg-text">' + escHtml(config) + '</div>';
+    list.appendChild(card);
+    idx++;
+  });
+
+  const res = document.getElementById('results');
+  res.style.display = 'block';
+  setTimeout(() => res.scrollIntoView({behavior:'smooth', block:'start'}), 50);
+}
+
+// جایگزینی مقدار یک پارامتر در query string — بدون تغییر ترتیب بقیه
+function replaceParam(query, key, newValue) {
+  // اگه پارامتر وجود داشت، مقدارش رو عوض کن
+  const re = new RegExp('((?:^|&)' + key + '=)[^&]*');
+  if (re.test(query)) {
+    return query.replace(re, '$1' + encodeURIComponent(newValue));
+  }
+  // اگه نبود، اضافه کن
+  return query + (query ? '&' : '') + key + '=' + encodeURIComponent(newValue);
+}
+
+function updateSubDisplay(val) {
+  currentSubLink = val.trim();
+  const el = document.getElementById('sub-url-show');
+  if (currentSubLink) { el.textContent = currentSubLink; el.classList.remove('empty'); }
+  else { el.textContent = 'لینک ساب هنوز وارد نشده...'; el.classList.add('empty'); }
+}
+
+function copyText(text) {
+  // روش اول: Clipboard API
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    return navigator.clipboard.writeText(text).then(() => true).catch(() => fallbackCopy(text));
+  }
+  return Promise.resolve(fallbackCopy(text));
+}
+
+function fallbackCopy(text) {
+  const ta = document.createElement('textarea');
+  ta.value = text;
+  ta.style.cssText = 'position:fixed;top:-9999px;left:-9999px;opacity:0;';
+  document.body.appendChild(ta);
+  ta.focus();
+  ta.select();
+  try { document.execCommand('copy'); } catch(e) { return false; }
+  document.body.removeChild(ta);
+  return true;
+}
+
+function copyCfg(btn) {
+  const text = btn.getAttribute('data-cfg');
+  copyText(text).then(() => {
+    btn.classList.add('ok');
+    btn.innerHTML = '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/></svg> کپی شد';
+    showToast('کانفیگ کپی شد ✓');
+    setTimeout(() => {
+      btn.classList.remove('ok');
+      btn.innerHTML = '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg> کپی';
+    }, 2500);
+  });
+}
+function copyAll() {
+  const all = [...document.querySelectorAll('.cfg-text')].map(e=>e.textContent).join('\n\n');
+  copyText(all).then(()=>showToast('همه کانفیگ‌ها کپی شدن ✓'));
+}
+function copySubLink() {
+  if (!currentSubLink) { showToast('ابتدا لینک ساب رو وارد کن'); return; }
+  copyText(currentSubLink).then(()=>showToast('لینک ساب کپی شد ✓'));
+}
+function openSubLink() { if (currentSubLink) window.open(currentSubLink,'_blank'); }
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  document.getElementById('toast-txt').textContent = msg;
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), 2600);
+}
+function esc(s) { return s.replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
+function escHtml(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+</script>
+</body>
+</html>
